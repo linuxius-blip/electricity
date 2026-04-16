@@ -725,34 +725,51 @@ function simulate(inputs, pricesMonthly, hourlyShapes) {
           dayGridCostNoBat += -net * buyPrice / 100;
         }
 
-        // With battery — solar self-consumption
-        if (net >= 0) {
-          const room = batteryCapacity - batterySoC;
-          const charge = Math.min(net, room);
-          batterySoC += charge;
-          const leftover = net - charge;
-          dayExportBat += leftover;
-          dayExportRevBat += leftover * sellPrice / 100;
-        } else {
-          const need = -net;
-          const avail = batterySoC * eff;
-          const deliver = Math.min(need, avail);
-          batterySoC = Math.max(0, batterySoC - deliver / eff);
-          dayBatteryDischarge += deliver;
-          const remain = need - deliver;
-          dayGridBuyBat += remain;
-          dayGridCostBat += remain * buyPrice / 100;
-        }
+        // With battery
+        const isCheapHour = arbitrage && cheapHours && cheapHours.has(h);
 
-        // Arbitrage: charge from grid during cheapest hours
-        if (arbitrage && cheapHours && cheapHours.has(h)) {
+        if (isCheapHour) {
+          // CHEAP HOUR (arbitrage): preserve battery charge, buy from grid instead
+          if (net >= 0) {
+            // Solar surplus: charge battery from surplus (free), export rest
+            const room = batteryCapacity - batterySoC;
+            const charge = Math.min(net, room);
+            batterySoC += charge;
+            const leftover = net - charge;
+            dayExportBat += leftover;
+            dayExportRevBat += leftover * sellPrice / 100;
+          } else {
+            // Deficit: buy from grid at cheap price (DON'T discharge battery)
+            dayGridBuyBat += -net;
+            dayGridCostBat += -net * buyPrice / 100;
+          }
+          // Also charge battery from grid at cheap price
           const room = batteryCapacity - batterySoC;
-          const chargeRate = batteryCapacity / 5; // C/5 rate (~3 kWh/h for 15 kWh battery)
+          const chargeRate = batteryCapacity / 5; // C/5 rate
           const gridCharge = Math.min(room, chargeRate);
           if (gridCharge > 0.001) {
             batterySoC += gridCharge;
             dayGridBuyBat += gridCharge;
             dayGridCostBat += gridCharge * buyPrice / 100;
+          }
+        } else {
+          // NORMAL / EXPENSIVE HOUR: use battery to offset grid purchases
+          if (net >= 0) {
+            const room = batteryCapacity - batterySoC;
+            const charge = Math.min(net, room);
+            batterySoC += charge;
+            const leftover = net - charge;
+            dayExportBat += leftover;
+            dayExportRevBat += leftover * sellPrice / 100;
+          } else {
+            const need = -net;
+            const avail = batterySoC * eff;
+            const deliver = Math.min(need, avail);
+            batterySoC = Math.max(0, batterySoC - deliver / eff);
+            dayBatteryDischarge += deliver;
+            const remain = need - deliver;
+            dayGridBuyBat += remain;
+            dayGridCostBat += remain * buyPrice / 100;
           }
         }
       }
@@ -1060,7 +1077,7 @@ function App() {
         <${MetricCard}
           label="Nettokostnad"
           value=${fmtSEK(econ.netCost)}
-          sub=${"Efter grönt avdrag " + fmtSEK(econ.subsidy)} />
+          sub=${econ.subsidy >= 50000 ? "Grönt avdrag maxat (50 000 kr)" : "Grönt avdrag " + fmtSEK(econ.subsidy)} />
         <${MetricCard}
           label="Återbetalningstid"
           value=${fmtYears(econ.paybackYears)}
