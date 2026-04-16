@@ -1,0 +1,1357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Solcellsbatteri Kalkylator · Sverige</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #ffffff;
+  --panel: #fafafa;
+  --border: #e5e5e5;
+  --border-strong: #d4d4d4;
+  --text: #0a0a0a;
+  --text-muted: #525252;
+  --text-subtle: #737373;
+  --accent: #059669;
+  --accent-soft: #d1fae5;
+  --warn: #d97706;
+  --warn-soft: #fef3c7;
+  --bad: #dc2626;
+  --bad-soft: #fee2e2;
+  --ring: rgba(5, 150, 105, 0.15);
+  --chart-1: #0a0a0a;
+  --chart-2: #059669;
+  --chart-3: #3b82f6;
+  --chart-4: #f59e0b;
+  --chart-5: #8b5cf6;
+  --chart-6: #ef4444;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "DM Sans", system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.mono {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-feature-settings: "tnum" 1;
+}
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+header.site {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+header.site h1 {
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
+}
+header.site p {
+  color: var(--text-muted);
+  margin: 0;
+  font-size: 15px;
+  max-width: 560px;
+}
+.price-status {
+  font-size: 13px;
+  color: var(--text-subtle);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.price-status .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-subtle);
+}
+.price-status.live .dot { background: var(--accent); }
+.price-status.fallback .dot { background: var(--warn); }
+
+.verdict {
+  border-radius: var(--radius);
+  padding: 32px;
+  margin-bottom: 32px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 32px;
+  align-items: center;
+}
+.verdict-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  flex-shrink: 0;
+}
+.verdict.good .verdict-icon { background: var(--accent-soft); color: var(--accent); }
+.verdict.ok .verdict-icon { background: var(--warn-soft); color: var(--warn); }
+.verdict.bad .verdict-icon { background: var(--bad-soft); color: var(--bad); }
+.verdict-text h2 {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 4px;
+}
+.verdict-text p {
+  color: var(--text-muted);
+  margin: 0;
+  font-size: 15px;
+}
+@media (max-width: 560px) {
+  .verdict { grid-template-columns: 1fr; padding: 24px; gap: 20px; }
+  .verdict-icon { width: 56px; height: 56px; font-size: 28px; }
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 48px;
+}
+@media (max-width: 900px) { .metrics { grid-template-columns: repeat(2, 1fr); } }
+.metric {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  background: var(--bg);
+}
+.metric-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.metric-value {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-family: "JetBrains Mono", monospace;
+}
+.metric-value.positive { color: var(--accent); }
+.metric-value.negative { color: var(--bad); }
+.metric-sub {
+  font-size: 12px;
+  color: var(--text-subtle);
+  margin-top: 4px;
+}
+
+.section {
+  margin-bottom: 56px;
+}
+.section-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 20px;
+}
+.section-subtitle {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin: -12px 0 20px;
+}
+
+.controls-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px 32px;
+}
+@media (max-width: 720px) { .controls-grid { grid-template-columns: 1fr; gap: 24px; } }
+
+.slider-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.slider-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+.slider-help {
+  display: block;
+  font-size: 12px;
+  color: var(--text-subtle);
+  font-weight: 400;
+  margin-top: 2px;
+}
+.slider-value {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 15px;
+  font-weight: 500;
+}
+.slider-value .unit {
+  color: var(--text-subtle);
+  font-size: 12px;
+  margin-left: 2px;
+}
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--border);
+  border-radius: 999px;
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text);
+  cursor: grab;
+  border: 3px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--border-strong);
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+input[type="range"]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 6px var(--ring); }
+input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; transform: scale(1.08); }
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text);
+  cursor: grab;
+  border: 3px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--border-strong);
+}
+.slider-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-subtle);
+  font-family: "JetBrains Mono", monospace;
+}
+
+select, .select {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  width: 100%;
+  cursor: pointer;
+}
+select:focus { outline: none; border-color: var(--text); box-shadow: 0 0 0 3px var(--ring); }
+
+.zone-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 4px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.zone-tabs button {
+  background: transparent;
+  border: none;
+  padding: 8px 4px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+}
+.zone-tabs button:hover { color: var(--text); }
+.zone-tabs button.active {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+.advanced-toggle {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.15s;
+}
+.advanced-toggle:hover { border-color: var(--text); color: var(--text); }
+.advanced-toggle .chev {
+  transition: transform 0.2s;
+}
+.advanced-toggle.open .chev { transform: rotate(180deg); }
+
+.advanced {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  overflow: hidden;
+  animation: slideDown 0.25s ease;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.advanced h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 16px;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+@media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
+.chart-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  background: var(--bg);
+}
+.chart-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+.chart-subtitle {
+  color: var(--text-subtle);
+  font-size: 13px;
+  margin: 0 0 20px;
+}
+.chart-legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 12px;
+}
+.chart-legend .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.breakdown-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.breakdown-table th, .breakdown-table td {
+  text-align: left;
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.breakdown-table th {
+  font-weight: 500;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.breakdown-table td.num {
+  font-family: "JetBrains Mono", monospace;
+  text-align: right;
+}
+.breakdown-table tr.total td {
+  font-weight: 600;
+  border-top: 2px solid var(--text);
+  border-bottom: none;
+  padding-top: 16px;
+}
+
+.sensitivity-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+@media (max-width: 720px) { .sensitivity-grid { grid-template-columns: 1fr; } }
+.sensitivity-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+.sensitivity-card .headline {
+  font-size: 24px;
+  font-weight: 600;
+  font-family: "JetBrains Mono", monospace;
+  letter-spacing: -0.02em;
+  margin: 8px 0;
+}
+.sensitivity-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 16px;
+}
+.sensitivity-table th, .sensitivity-table td {
+  padding: 6px 8px;
+  text-align: center;
+  font-family: "JetBrains Mono", monospace;
+}
+.sensitivity-table th { color: var(--text-subtle); font-weight: 500; font-size: 11px; }
+.sensitivity-table td { border: 1px solid var(--border); }
+.sensitivity-table td.cell {
+  background: var(--panel);
+}
+
+.footer-note {
+  margin-top: 64px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-subtle);
+  line-height: 1.7;
+}
+.footer-note h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.footer-note ul {
+  margin: 0;
+  padding: 0 0 0 18px;
+}
+.footer-note li { margin-bottom: 4px; }
+
+.donuts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 8px;
+}
+.donut-wrap { text-align: center; }
+.donut-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.donut-value {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.loading {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-subtle);
+  font-size: 14px;
+}
+
+/* Recharts tweaks */
+.recharts-cartesian-axis-tick text,
+.recharts-legend-item-text {
+  font-family: "JetBrains Mono", monospace !important;
+  font-size: 11px !important;
+  fill: var(--text-subtle) !important;
+}
+.recharts-tooltip-wrapper {
+  font-family: "DM Sans", sans-serif !important;
+}
+.recharts-default-tooltip {
+  border: 1px solid var(--border-strong) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--shadow) !important;
+  font-size: 13px !important;
+}
+</style>
+</head>
+<body>
+<div id="root"><div class="loading">Loading calculator…</div></div>
+<script type="module">
+import React, { useState, useEffect, useMemo, useCallback } from "https://esm.sh/react@18.3.1";
+import { createRoot } from "https://esm.sh/react-dom@18.3.1/client";
+import htm from "https://esm.sh/htm@3.1.1";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer,
+  ReferenceLine, Area, AreaChart,
+} from "https://esm.sh/recharts@2.12.7?deps=react@18.3.1,react-dom@18.3.1";
+
+const html = htm.bind(React.createElement);
+
+/* ---------------- Constants ---------------- */
+
+const SOLAR_MONTHLY = [10, 25, 65, 110, 145, 155, 150, 125, 80, 40, 15, 5]; // kWh/kWp per month
+const SOLAR_HOURLY = [0, 0, 0, 0, 0, 0.01, 0.03, 0.06, 0.09, 0.11, 0.13, 0.14, 0.14, 0.13, 0.11, 0.09, 0.06, 0.03, 0.01, 0, 0, 0, 0, 0];
+const CONSUMPTION_HOURLY = [0.025, 0.020, 0.018, 0.018, 0.020, 0.025, 0.040, 0.055, 0.050, 0.045, 0.042, 0.040, 0.042, 0.040, 0.038, 0.040, 0.050, 0.065, 0.070, 0.060, 0.055, 0.050, 0.040, 0.030];
+const CONSUMPTION_MONTHLY_BASE = [1400, 1300, 1200, 1050, 950, 850, 800, 850, 1000, 1100, 1300, 1500];
+const CONSUMPTION_MONTHLY_SUM = CONSUMPTION_MONTHLY_BASE.reduce((a, b) => a + b, 0); // 13300
+
+const PRICE_MONTHLY_SE3_DEFAULT = [85, 75, 55, 40, 30, 25, 28, 32, 45, 60, 90, 110]; // öre/kWh
+const PRICE_HOURLY_MULT_DEFAULT = [0.85, 0.80, 0.78, 0.77, 0.80, 0.90, 1.05, 1.15, 1.10, 0.95, 0.85, 0.75, 0.70, 0.72, 0.75, 0.80, 0.90, 1.15, 1.30, 1.25, 1.15, 1.05, 0.95, 0.90];
+
+const ZONE_MULT = { SE1: 0.80, SE2: 0.85, SE3: 1.0, SE4: 1.2 };
+const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+const DEFAULTS = {
+  batteryCapacity: 15,
+  systemSize: 8,
+  batteryCostPerKWh: 9000,
+  zone: "SE3",
+  priceScenario: 1.0,
+  batteryLifespan: 12,
+  batteryEff: 0.90,
+  panelDeg: 0.005,
+  discountRate: 0.03,
+  priceGrowth: 0.02,
+  annualConsumption: 13000,
+  gridFeeOre: 35,
+  energyTaxOre: 42,
+  vat: 0.25,
+  nattnytta: 8,
+  numAdults: 1,
+  arbitrage: false,
+  showAdvanced: false,
+};
+
+const STORAGE_KEY = "se-solar-battery-calc.v2";
+
+/* ---------------- Helpers ---------------- */
+
+const fmtSEK = (n, digits = 0) => {
+  if (!isFinite(n)) return "–";
+  const sign = n < 0 ? "-" : "";
+  const abs = Math.abs(n);
+  if (abs >= 10000) return sign + Math.round(abs).toLocaleString("sv-SE") + " kr";
+  return sign + abs.toFixed(digits).replace(".", ",") + " kr";
+};
+const fmtNum = (n, digits = 0) => {
+  if (!isFinite(n)) return "–";
+  return n.toFixed(digits).replace(".", ",");
+};
+const fmtPct = (n, digits = 0) => {
+  if (!isFinite(n)) return "–";
+  return (n * 100).toFixed(digits) + "%";
+};
+const fmtYears = (n) => {
+  if (!isFinite(n) || n <= 0) return "Aldrig";
+  if (n > 50) return ">50 år";
+  return n.toFixed(1).replace(".", ",") + " år";
+};
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return { ...DEFAULTS, ...parsed };
+  } catch (e) { return null; }
+}
+function saveState(state) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+/* ---------------- Price API ---------------- */
+
+async function fetchMonthlyPrices(zone) {
+  const today = new Date();
+  const promises = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 15);
+    if (d > today) continue;
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = "15";
+    const url = `https://www.elprisetjustnu.se/api/v1/prices/${year}/${month}-${day}_${zone}.json`;
+    promises.push(
+      fetch(url)
+        .then(r => r.ok ? r.json() : null)
+        .catch(() => null)
+        .then(data => ({ monthIdx: d.getMonth(), data }))
+    );
+  }
+  const results = await Promise.all(promises);
+  const monthlyAvg = new Array(12).fill(null);
+  const hourlyShape = new Array(12).fill(null);
+  let gotCount = 0;
+  for (const { monthIdx, data } of results) {
+    if (Array.isArray(data) && data.length >= 23) {
+      // Aggregate to 24 hourly buckets (API may return hourly or 15-min values)
+      const hourly = new Array(24).fill(0);
+      const counts = new Array(24).fill(0);
+      for (const row of data) {
+        const t = new Date(row.time_start);
+        const h = t.getHours();
+        const v = (row.SEK_per_kWh ?? 0) * 100; // öre/kWh
+        hourly[h] += v;
+        counts[h] += 1;
+      }
+      const hourlyFinal = hourly.map((v, i) => counts[i] > 0 ? v / counts[i] : null);
+      const valid = hourlyFinal.filter(v => v !== null);
+      if (valid.length < 20) continue;
+      // Fill missing hours with average
+      const avg = valid.reduce((a, b) => a + b, 0) / valid.length;
+      const filled = hourlyFinal.map(v => v === null ? avg : v);
+      monthlyAvg[monthIdx] = avg;
+      hourlyShape[monthIdx] = avg > 0 ? filled.map(v => v / avg) : PRICE_HOURLY_MULT_DEFAULT;
+      gotCount++;
+    }
+  }
+  return { monthlyAvg, hourlyShape, gotCount };
+}
+
+/* ---------------- Simulation ---------------- */
+
+function simulate(inputs, pricesMonthly, hourlyShapes) {
+  const {
+    batteryCapacity, systemSize, priceScenario,
+    batteryEff, annualConsumption,
+    gridFeeOre, energyTaxOre, vat, nattnytta, numAdults, arbitrage,
+  } = inputs;
+  const eff = batteryEff;
+  const consScale = annualConsumption / CONSUMPTION_MONTHLY_SUM;
+  const SKATTEREDUKTION_ORE = 60; // öre/kWh tax credit for exported solar
+  const SKATTEREDUKTION_CAP = 30000 * (numAdults || 1); // kWh/year cap
+
+  let totalAnnualSolar = 0, totalConsumption = 0;
+  let annualGridBuyNoBat = 0, annualGridBuyBat = 0;
+  let annualExportNoBat = 0, annualExportBat = 0;
+  let annualGridCostNoBat = 0, annualGridCostBat = 0;
+  let annualExportRevNoBat = 0, annualExportRevBat = 0;
+  let totalBatteryCycles = 0;
+  const monthlyBreakdown = [];
+  const priceByMonth = [];
+
+  for (let m = 0; m < 12; m++) {
+    const daysInMonth = DAYS_IN_MONTH[m];
+    const solarPerKWpDay = SOLAR_MONTHLY[m] / daysInMonth;
+    const monthlyCons = CONSUMPTION_MONTHLY_BASE[m] * consScale;
+    const dailyCons = monthlyCons / daysInMonth;
+    const monthAvgPrice = pricesMonthly[m] * priceScenario;
+    const hourlyMult = hourlyShapes[m] || PRICE_HOURLY_MULT_DEFAULT;
+
+    // For arbitrage: find the cheapest hours of the day to charge from grid
+    let cheapHours = null;
+    if (arbitrage) {
+      const hPrices = [];
+      for (let h = 0; h < 24; h++) {
+        const spot = monthAvgPrice * hourlyMult[h];
+        hPrices.push({ h, buy: (spot + gridFeeOre + energyTaxOre) * (1 + vat) });
+      }
+      hPrices.sort((a, b) => a.buy - b.buy);
+      // Cheapest 8 hours = charge windows (typically nighttime)
+      cheapHours = new Set(hPrices.slice(0, 8).map(p => p.h));
+    }
+
+    let batterySoC = batteryCapacity * 0.2;
+    let dayGridBuyNoBat = 0, dayGridBuyBat = 0;
+    let dayExportNoBat = 0, dayExportBat = 0;
+    let dayGridCostNoBat = 0, dayGridCostBat = 0;
+    let dayExportRevNoBat = 0, dayExportRevBat = 0;
+    let dayBatteryDischarge = 0, daySolar = 0, dayCons = 0;
+    let buyPriceSum = 0, sellPriceSum = 0;
+
+    // Run twice; keep second run (lets SoC reach steady state)
+    for (let run = 0; run < 2; run++) {
+      if (run === 1) {
+        dayGridBuyNoBat = 0; dayGridBuyBat = 0;
+        dayExportNoBat = 0; dayExportBat = 0;
+        dayGridCostNoBat = 0; dayGridCostBat = 0;
+        dayExportRevNoBat = 0; dayExportRevBat = 0;
+        dayBatteryDischarge = 0; daySolar = 0; dayCons = 0;
+        buyPriceSum = 0; sellPriceSum = 0;
+      }
+      for (let h = 0; h < 24; h++) {
+        const solar = solarPerKWpDay * systemSize * SOLAR_HOURLY[h];
+        const cons = dailyCons * CONSUMPTION_HOURLY[h];
+        const spot = monthAvgPrice * hourlyMult[h];
+        const buyPrice = (spot + gridFeeOre + energyTaxOre) * (1 + vat); // öre/kWh
+        const sellPrice = spot + (nattnytta || 8);                       // öre/kWh (spot + nätnytta only, no skattereduktion)
+        daySolar += solar; dayCons += cons;
+        buyPriceSum += buyPrice; sellPriceSum += sellPrice;
+
+        // No battery scenario
+        const net = solar - cons;
+        if (net >= 0) {
+          dayExportNoBat += net;
+          dayExportRevNoBat += net * sellPrice / 100;
+        } else {
+          dayGridBuyNoBat += -net;
+          dayGridCostNoBat += -net * buyPrice / 100;
+        }
+
+        // With battery — solar self-consumption
+        if (net >= 0) {
+          const room = batteryCapacity - batterySoC;
+          const charge = Math.min(net, room);
+          batterySoC += charge;
+          const leftover = net - charge;
+          dayExportBat += leftover;
+          dayExportRevBat += leftover * sellPrice / 100;
+        } else {
+          const need = -net;
+          const avail = batterySoC * eff;
+          const deliver = Math.min(need, avail);
+          batterySoC = Math.max(0, batterySoC - deliver / eff);
+          dayBatteryDischarge += deliver;
+          const remain = need - deliver;
+          dayGridBuyBat += remain;
+          dayGridCostBat += remain * buyPrice / 100;
+        }
+
+        // Arbitrage: charge from grid during cheapest hours
+        if (arbitrage && cheapHours && cheapHours.has(h)) {
+          const room = batteryCapacity - batterySoC;
+          const chargeRate = batteryCapacity / 5; // C/5 rate (~3 kWh/h for 15 kWh battery)
+          const gridCharge = Math.min(room, chargeRate);
+          if (gridCharge > 0.001) {
+            batterySoC += gridCharge;
+            dayGridBuyBat += gridCharge;
+            dayGridCostBat += gridCharge * buyPrice / 100;
+          }
+        }
+      }
+    }
+
+    const mult = daysInMonth;
+    totalAnnualSolar += daySolar * mult;
+    totalConsumption += dayCons * mult;
+    annualGridBuyNoBat += dayGridBuyNoBat * mult;
+    annualGridBuyBat += dayGridBuyBat * mult;
+    annualExportNoBat += dayExportNoBat * mult;
+    annualExportBat += dayExportBat * mult;
+    annualGridCostNoBat += dayGridCostNoBat * mult;
+    annualGridCostBat += dayGridCostBat * mult;
+    annualExportRevNoBat += dayExportRevNoBat * mult;
+    annualExportRevBat += dayExportRevBat * mult;
+    totalBatteryCycles += (dayBatteryDischarge * mult) / Math.max(1e-9, batteryCapacity);
+
+    const monthSavings = ((dayGridCostNoBat - dayGridCostBat) - (dayExportRevNoBat - dayExportRevBat)) * mult;
+    monthlyBreakdown.push({
+      month: MONTH_NAMES[m],
+      savings: monthSavings,
+      exportNoBat: dayExportNoBat * mult,
+      exportBat: dayExportBat * mult,
+      gridBuyNoBat: dayGridBuyNoBat * mult,
+      gridBuyBat: dayGridBuyBat * mult,
+      solar: daySolar * mult,
+      consumption: dayCons * mult,
+      batteryDischarge: dayBatteryDischarge * mult,
+    });
+    priceByMonth.push({
+      month: MONTH_NAMES[m],
+      buy: buyPriceSum / 24,
+      sell: sellPriceSum / 24,
+      spread: (buyPriceSum - sellPriceSum) / 24,
+    });
+  }
+
+  // Skattereduktion: 60 öre/kWh tax credit on exported solar, per person, capped
+  const skatteredQualNoBat = Math.min(annualExportNoBat, annualGridBuyNoBat, SKATTEREDUKTION_CAP);
+  const skatteredQualBat = Math.min(annualExportBat, annualGridBuyBat, SKATTEREDUKTION_CAP);
+  const skatteredNoBat = skatteredQualNoBat * SKATTEREDUKTION_ORE / 100; // SEK
+  const skatteredBat = skatteredQualBat * SKATTEREDUKTION_ORE / 100;     // SEK
+
+  // Total annual cost = grid purchases - export revenue - skattereduktion
+  // Savings = costWithout - costWith
+  const operationalSavings = (annualGridCostNoBat - annualGridCostBat) - (annualExportRevNoBat - annualExportRevBat);
+  const skatteredLoss = skatteredNoBat - skatteredBat; // battery reduces skattereduktion
+  const annualSavings = operationalSavings - skatteredLoss;
+
+  const selfConsNoBat = totalAnnualSolar - annualExportNoBat;
+  const selfConsBat = totalAnnualSolar - annualExportBat;
+  const selfConsRateNoBat = totalAnnualSolar > 0 ? selfConsNoBat / totalAnnualSolar : 0;
+  const selfConsRateBat = totalAnnualSolar > 0 ? selfConsBat / totalAnnualSolar : 0;
+
+  return {
+    annualSavings, operationalSavings, skatteredLoss,
+    skatteredNoBat, skatteredBat,
+    monthlyBreakdown, priceByMonth,
+    totalAnnualSolar, totalConsumption,
+    annualGridBuyNoBat, annualGridBuyBat,
+    annualExportNoBat, annualExportBat,
+    annualGridCostNoBat, annualGridCostBat,
+    selfConsRateNoBat, selfConsRateBat,
+    totalBatteryCycles,
+  };
+}
+
+function computeEconomics(inputs, simResult) {
+  const { batteryCapacity, batteryCostPerKWh, batteryLifespan, discountRate, priceGrowth, panelDeg } = inputs;
+  const gross = batteryCapacity * batteryCostPerKWh;
+  const subsidy = Math.min(gross * 0.5, 50000);
+  const netCost = gross - subsidy;
+  const paybackYears = simResult.annualSavings > 0 ? netCost / simResult.annualSavings : Infinity;
+  let npv = -netCost;
+  let cumulative = -netCost;
+  const timeline = [{ year: 0, cumulative, annual: -netCost }];
+  let lifetimeUndiscounted = 0;
+  for (let t = 1; t <= batteryLifespan; t++) {
+    const growth = Math.pow(1 + priceGrowth, t - 1);
+    const degrade = Math.pow(1 - panelDeg, t - 1);
+    const cf = simResult.annualSavings * growth * degrade;
+    lifetimeUndiscounted += cf;
+    npv += cf / Math.pow(1 + discountRate, t);
+    cumulative += cf;
+    timeline.push({ year: t, cumulative, annual: cf });
+  }
+  return { gross, subsidy, netCost, paybackYears, npv, lifetimeUndiscounted, timeline };
+}
+
+function verdictFor(econ, lifespan) {
+  const pay = econ.paybackYears;
+  if (econ.npv <= 0 || !isFinite(pay)) return { kind: "bad", icon: "✕", title: "Lönar sig inte", desc: "Batteriet betalar sig inte tillbaka inom livslängden." };
+  if (pay < lifespan * 0.6) return { kind: "good", icon: "✓", title: "Lönar sig bra", desc: `Betalar sig på ${fmtYears(pay)} — klart under livslängden på ${lifespan} år.` };
+  if (pay < lifespan) return { kind: "ok", icon: "~", title: "Marginellt lönsamt", desc: `Betalar sig på ${fmtYears(pay)} — precis under livslängden på ${lifespan} år. Liten marginal.` };
+  return { kind: "bad", icon: "✕", title: "Lönar sig inte", desc: `Betalar sig inte tillbaka inom batteriets livslängd (${lifespan} år).` };
+}
+
+/* ---------------- UI Components ---------------- */
+
+function Slider({ label, help, unit, value, min, max, step, onChange, format }) {
+  const fmt = format || ((v) => fmtNum(v));
+  return html`
+    <div className="slider-wrap">
+      <div className="slider-header">
+        <div>
+          <div className="slider-label">${label}</div>
+          ${help && html`<div className="slider-help">${help}</div>`}
+        </div>
+        <div className="slider-value">${fmt(value)} <span className="unit">${unit}</span></div>
+      </div>
+      <input type="range" min=${min} max=${max} step=${step} value=${value}
+        onInput=${(e) => onChange(parseFloat(e.target.value))} />
+      <div className="slider-scale">
+        <span>${fmt(min)}</span>
+        <span>${fmt(max)}</span>
+      </div>
+    </div>
+  `;
+}
+
+function ZoneTabs({ value, onChange }) {
+  const zones = ["SE1", "SE2", "SE3", "SE4"];
+  return html`
+    <div className="zone-tabs">
+      ${zones.map(z => html`
+        <button key=${z} className=${value === z ? "active" : ""} onClick=${() => onChange(z)}>${z}</button>
+      `)}
+    </div>
+  `;
+}
+
+function MetricCard({ label, value, sub, kind }) {
+  return html`
+    <div className="metric">
+      <div className="metric-label">${label}</div>
+      <div className=${"metric-value " + (kind || "")}>${value}</div>
+      ${sub && html`<div className="metric-sub">${sub}</div>`}
+    </div>
+  `;
+}
+
+function ChartCard({ title, subtitle, children, legend }) {
+  return html`
+    <div className="chart-card">
+      <div className="chart-title">${title}</div>
+      ${subtitle && html`<div className="chart-subtitle">${subtitle}</div>`}
+      ${children}
+      ${legend && html`<div className="chart-legend">${legend}</div>`}
+    </div>
+  `;
+}
+
+/* ---------------- Main App ---------------- */
+
+function App() {
+  const initial = loadState() || DEFAULTS;
+  const [state, setState] = useState(initial);
+  const [priceData, setPriceData] = useState({ monthlyAvg: new Array(12).fill(null), hourlyShape: new Array(12).fill(null), gotCount: 0, loading: true, error: null });
+
+  // Persist state
+  useEffect(() => { saveState(state); }, [state]);
+
+  // Fetch prices when zone changes
+  useEffect(() => {
+    let cancelled = false;
+    setPriceData(p => ({ ...p, loading: true, error: null }));
+    fetchMonthlyPrices(state.zone)
+      .then(result => {
+        if (cancelled) return;
+        setPriceData({ ...result, loading: false, error: null });
+      })
+      .catch(err => {
+        if (cancelled) return;
+        setPriceData(p => ({ ...p, loading: false, error: err.message || "Kunde inte hämta priser" }));
+      });
+    return () => { cancelled = true; };
+  }, [state.zone]);
+
+  const set = useCallback((key) => (val) => setState(s => ({ ...s, [key]: val })), []);
+
+  // Effective monthly prices: use fetched data where available, otherwise defaults × zone multiplier
+  const { effectivePrices, effectiveShapes, usingLive } = useMemo(() => {
+    const ep = new Array(12);
+    const es = new Array(12);
+    let live = 0;
+    const zMult = ZONE_MULT[state.zone] || 1.0;
+    for (let m = 0; m < 12; m++) {
+      if (priceData.monthlyAvg[m] !== null && priceData.monthlyAvg[m] !== undefined) {
+        ep[m] = priceData.monthlyAvg[m];
+        es[m] = priceData.hourlyShape[m];
+        live++;
+      } else {
+        ep[m] = PRICE_MONTHLY_SE3_DEFAULT[m] * zMult;
+        es[m] = PRICE_HOURLY_MULT_DEFAULT;
+      }
+    }
+    return { effectivePrices: ep, effectiveShapes: es, usingLive: live };
+  }, [priceData, state.zone]);
+
+  const sim = useMemo(() => simulate(state, effectivePrices, effectiveShapes), [state, effectivePrices, effectiveShapes]);
+  const econ = useMemo(() => computeEconomics(state, sim), [state, sim]);
+  const verdict = verdictFor(econ, state.batteryLifespan);
+
+  // Sensitivity: break-even battery cost (solve where payback == lifespan)
+  const breakEvenCost = useMemo(() => {
+    if (sim.annualSavings <= 0) return null;
+    // Simplified: using single avg savings over lifespan
+    let lifetimeNominal = 0;
+    for (let t = 1; t <= state.batteryLifespan; t++) {
+      lifetimeNominal += sim.annualSavings * Math.pow(1 + state.priceGrowth, t - 1) * Math.pow(1 - state.panelDeg, t - 1);
+    }
+    // netCost must equal lifetimeNominal (for zero-sum, no discount) or payback == lifespan: netCost = annualSavings * lifespan (very simple)
+    // We solve: netCost = annualSavings * lifespan  =>  gross - min(0.5*gross, 50000) = annualSavings * lifespan
+    const target = sim.annualSavings * state.batteryLifespan;
+    // If 0.5*gross <= 50000: netCost = 0.5*gross, so gross = 2*target, costPerKWh = gross/capacity
+    let gross = 2 * target;
+    if (0.5 * gross > 50000) {
+      gross = target + 50000;
+    }
+    const cost = gross / state.batteryCapacity;
+    return { cost, gross };
+  }, [sim.annualSavings, state.batteryLifespan, state.batteryCapacity, state.priceGrowth, state.panelDeg]);
+
+  // Sensitivity: break-even price multiplier
+  const breakEvenPrice = useMemo(() => {
+    // Binary search on priceScenario that yields payback == lifespan
+    const savingsAt = (mult) => {
+      const s = simulate({ ...state, priceScenario: mult }, effectivePrices, effectiveShapes);
+      return s.annualSavings;
+    };
+    const target = econ.netCost / state.batteryLifespan; // required annual savings for simple payback = lifespan
+    let lo = 0.1, hi = 5.0;
+    for (let i = 0; i < 30; i++) {
+      const mid = (lo + hi) / 2;
+      const s = savingsAt(mid);
+      if (s < target) lo = mid; else hi = mid;
+      if (hi - lo < 0.01) break;
+    }
+    return (lo + hi) / 2;
+  }, [state, effectivePrices, effectiveShapes, econ.netCost]);
+
+  // Sensitivity table: payback at combinations of battery cost x price scenario
+  const sensitivityTable = useMemo(() => {
+    const costs = [5000, 7000, 9000, 11000, 13000];
+    const prices = [0.7, 1.0, 1.3, 1.6];
+    const rows = costs.map(c => {
+      const cells = prices.map(p => {
+        const s = simulate({ ...state, priceScenario: p }, effectivePrices, effectiveShapes);
+        const e = computeEconomics({ ...state, batteryCostPerKWh: c, priceScenario: p }, s);
+        return { cost: c, price: p, payback: e.paybackYears };
+      });
+      return { cost: c, cells };
+    });
+    return { costs, prices, rows };
+  }, [state, effectivePrices, effectiveShapes]);
+
+  const pieNoBat = [
+    { name: "Self-consumed", value: Math.max(0, (1 - (sim.annualExportNoBat / Math.max(1e-9, sim.totalAnnualSolar))) * 100) },
+    { name: "Exported", value: Math.max(0, (sim.annualExportNoBat / Math.max(1e-9, sim.totalAnnualSolar)) * 100) },
+  ];
+  const pieBat = [
+    { name: "Self-consumed", value: Math.max(0, sim.selfConsRateBat * 100) },
+    { name: "Exported", value: Math.max(0, (1 - sim.selfConsRateBat) * 100) },
+  ];
+
+  // Monthly chart + prices
+  const monthlyChartData = sim.monthlyBreakdown.map(m => ({ month: m.month, savings: Math.round(m.savings) }));
+  const priceChartData = sim.priceByMonth.map(m => ({ month: m.month, buy: Math.round(m.buy), sell: Math.round(m.sell) }));
+
+  const resetDefaults = () => {
+    if (confirm("Återställ alla värden till standard?")) {
+      setState(DEFAULTS);
+    }
+  };
+
+  const priceStatusClass = priceData.loading ? "" : (usingLive > 0 ? "live" : "fallback");
+  const priceStatusText = priceData.loading
+    ? "Laddar elpriser…"
+    : usingLive > 0
+      ? `Live-priser för ${usingLive}/12 månader (${state.zone})`
+      : `Använder standardpriser (${state.zone})`;
+
+  return html`
+    <div className="app">
+      <header className="site">
+        <div>
+          <h1>Lönar sig ett solcellsbatteri?</h1>
+          <p>Räkna på om ett batteri till dina solceller är en bra investering. Använder faktiska elpriser från elprisetjustnu.se.</p>
+        </div>
+        <div className=${"price-status " + priceStatusClass}>
+          <span className="dot"></span>
+          <span>${priceStatusText}</span>
+        </div>
+      </header>
+
+      <${Verdict} verdict=${verdict} econ=${econ} />
+
+      <div className="metrics">
+        <${MetricCard}
+          label="Årlig besparing"
+          value=${fmtSEK(sim.annualSavings)}
+          sub=${sim.skatteredLoss > 0 ? "Inkl. −" + fmtSEK(sim.skatteredLoss) + " förlorad skattereduktion" : "≈ " + Math.round(sim.totalBatteryCycles) + " batterivarv/år"}
+          kind=${sim.annualSavings > 0 ? "positive" : "negative"} />
+        <${MetricCard}
+          label="Nettokostnad"
+          value=${fmtSEK(econ.netCost)}
+          sub=${"Efter grönt avdrag " + fmtSEK(econ.subsidy)} />
+        <${MetricCard}
+          label="Återbetalningstid"
+          value=${fmtYears(econ.paybackYears)}
+          sub=${"Livslängd " + state.batteryLifespan + " år"} />
+        <${MetricCard}
+          label="NPV över livstid"
+          value=${fmtSEK(econ.npv)}
+          sub=${"Diskontering " + fmtPct(state.discountRate, 1)}
+          kind=${econ.npv > 0 ? "positive" : "negative"} />
+      </div>
+
+      <section className="section">
+        <h2 className="section-title">Dina förutsättningar</h2>
+        <div className="controls-grid">
+          <${Slider} label="Batterikapacitet" help="Storleken på batteriet du funderar på" unit="kWh"
+            value=${state.batteryCapacity} min=${5} max=${30} step=${1} onChange=${set("batteryCapacity")} />
+          <${Slider} label="Solcellsanläggning" help="Installerad toppeffekt" unit="kWp"
+            value=${state.systemSize} min=${3} max=${20} step=${0.5} onChange=${set("systemSize")} format=${v => fmtNum(v, 1)} />
+          <${Slider} label="Batterikostnad (installerad)" help="Inklusive installation, före grönt avdrag" unit="kr/kWh"
+            value=${state.batteryCostPerKWh} min=${4000} max=${14000} step=${500} onChange=${set("batteryCostPerKWh")}
+            format=${v => v.toLocaleString("sv-SE")} />
+          <div>
+            <div className="slider-header" style=${{ marginBottom: "10px" }}>
+              <div>
+                <div className="slider-label">Elområde</div>
+                <div className="slider-help">Påverkar spotpriset där du bor</div>
+              </div>
+            </div>
+            <${ZoneTabs} value=${state.zone} onChange=${set("zone")} />
+          </div>
+          <${Slider} label="Prisscenario" help="Multiplikator på historiska elpriser" unit="×"
+            value=${state.priceScenario} min=${0.5} max=${2.0} step=${0.1} onChange=${set("priceScenario")}
+            format=${v => fmtNum(v, 1)} />
+          <${Slider} label="Årlig elförbrukning" help="Hushållets totala förbrukning" unit="kWh"
+            value=${state.annualConsumption} min=${5000} max=${25000} step=${500} onChange=${set("annualConsumption")}
+            format=${v => v.toLocaleString("sv-SE")} />
+          <div>
+            <div className="slider-header" style=${{ marginBottom: "10px" }}>
+              <div>
+                <div className="slider-label">Antal vuxna i hushållet</div>
+                <div className="slider-help">Skattereduktion (60 öre/kWh) gäller per person, max 30 000 kWh/person</div>
+              </div>
+            </div>
+            <div className="zone-tabs" style=${{ gridTemplateColumns: "1fr 1fr" }}>
+              <button className=${state.numAdults === 1 ? "active" : ""} onClick=${() => set("numAdults")(1)}>1 person</button>
+              <button className=${state.numAdults === 2 ? "active" : ""} onClick=${() => set("numAdults")(2)}>2 personer</button>
+            </div>
+          </div>
+          <div>
+            <div className="slider-header" style=${{ marginBottom: "10px" }}>
+              <div>
+                <div className="slider-label">Prisarbitrage</div>
+                <div className="slider-help">Ladda batteriet från elnätet på natten när elen är billig, använd på kvällen</div>
+              </div>
+            </div>
+            <div className="zone-tabs" style=${{ gridTemplateColumns: "1fr 1fr" }}>
+              <button className=${!state.arbitrage ? "active" : ""} onClick=${() => set("arbitrage")(false)}>Av</button>
+              <button className=${state.arbitrage ? "active" : ""} onClick=${() => set("arbitrage")(true)}>På</button>
+            </div>
+          </div>
+        </div>
+
+        <div style=${{ marginTop: "28px" }}>
+          <button className=${"advanced-toggle " + (state.showAdvanced ? "open" : "")} onClick=${() => set("showAdvanced")(!state.showAdvanced)}>
+            ${state.showAdvanced ? "Dölj" : "Visa"} avancerade antaganden
+            <span className="chev">▾</span>
+          </button>
+        </div>
+
+        ${state.showAdvanced && html`
+          <div className="advanced">
+            <h3>Batteri & system</h3>
+            <div className="controls-grid" style=${{ marginBottom: "28px" }}>
+              <${Slider} label="Batteriets livslängd" unit="år"
+                value=${state.batteryLifespan} min=${8} max=${20} step=${1} onChange=${set("batteryLifespan")} />
+              <${Slider} label="Round-trip-verkningsgrad" unit="%"
+                value=${state.batteryEff} min=${0.80} max=${0.98} step=${0.01} onChange=${set("batteryEff")}
+                format=${v => fmtNum(v * 100, 0)} />
+              <${Slider} label="Paneldegradering" unit="%/år"
+                value=${state.panelDeg} min=${0} max=${0.015} step=${0.001} onChange=${set("panelDeg")}
+                format=${v => fmtNum(v * 100, 1)} />
+            </div>
+            <h3>Ekonomi</h3>
+            <div className="controls-grid" style=${{ marginBottom: "28px" }}>
+              <${Slider} label="Diskonteringsränta (NPV)" unit="%"
+                value=${state.discountRate} min=${0} max=${0.08} step=${0.005} onChange=${set("discountRate")}
+                format=${v => fmtNum(v * 100, 1)} />
+              <${Slider} label="Elprisutveckling" unit="%/år"
+                value=${state.priceGrowth} min=${0} max=${0.06} step=${0.005} onChange=${set("priceGrowth")}
+                format=${v => fmtNum(v * 100, 1)} />
+            </div>
+            <h3>Svenska konstanter</h3>
+            <div className="controls-grid">
+              <${Slider} label="Nätavgift" unit="öre/kWh"
+                value=${state.gridFeeOre} min=${0} max=${100} step=${1} onChange=${set("gridFeeOre")} />
+              <${Slider} label="Energiskatt" unit="öre/kWh"
+                value=${state.energyTaxOre} min=${0} max=${80} step=${1} onChange=${set("energyTaxOre")} />
+              <${Slider} label="Moms" unit="%"
+                value=${state.vat} min=${0} max=${0.30} step=${0.01} onChange=${set("vat")}
+                format=${v => fmtNum(v * 100, 0)} />
+              <${Slider} label="Nätnytta (sälj, utöver spot)" unit="öre/kWh"
+                value=${state.nattnytta} min=${0} max=${20} step=${1} onChange=${set("nattnytta")} />
+            </div>
+            <div style=${{ marginTop: "24px" }}>
+              <button className="advanced-toggle" onClick=${resetDefaults}>Återställ alla värden</button>
+            </div>
+          </div>
+        `}
+      </section>
+
+      <section className="section">
+        <h2 className="section-title">Visualisering</h2>
+        <p className="section-subtitle">Så här ser beräkningen ut månad för månad.</p>
+        <div className="charts-grid">
+
+          <${ChartCard} title="Månatlig besparing" subtitle="Vintermånader står för merparten av batterivärdet"
+            legend=${html`<span><span className="dot" style=${{ background: "var(--chart-2)" }}></span>Besparing (kr)</span>`}>
+            <${ResponsiveContainer} width="100%" height=${240}>
+              <${BarChart} data=${monthlyChartData} margin=${{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <${CartesianGrid} strokeDasharray="3 3" stroke="#f0f0f0" />
+                <${XAxis} dataKey="month" tickLine=${false} axisLine=${false} />
+                <${YAxis} tickLine=${false} axisLine=${false} tickFormatter=${v => v.toLocaleString("sv-SE")} />
+                <${Tooltip} formatter=${v => fmtSEK(v)} />
+                <${Bar} dataKey="savings" fill="var(--chart-2)" radius=${[4, 4, 0, 0]} />
+              <//>
+            <//>
+          <//>
+
+          <${ChartCard} title="Köp- vs säljpris" subtitle="Skillnaden = batteriets värde per kWh-varv"
+            legend=${html`
+              <span><span className="dot" style=${{ background: "var(--chart-1)" }}></span>Köp (retail)</span>
+              <span><span className="dot" style=${{ background: "var(--chart-4)" }}></span>Sälj (feed-in)</span>
+            `}>
+            <${ResponsiveContainer} width="100%" height=${240}>
+              <${LineChart} data=${priceChartData} margin=${{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <${CartesianGrid} strokeDasharray="3 3" stroke="#f0f0f0" />
+                <${XAxis} dataKey="month" tickLine=${false} axisLine=${false} />
+                <${YAxis} tickLine=${false} axisLine=${false} tickFormatter=${v => v + " öre"} />
+                <${Tooltip} formatter=${v => v + " öre/kWh"} />
+                <${Line} type="monotone" dataKey="buy" stroke="var(--chart-1)" strokeWidth=${2} dot=${{ r: 3 }} />
+                <${Line} type="monotone" dataKey="sell" stroke="var(--chart-4)" strokeWidth=${2} dot=${{ r: 3 }} />
+              <//>
+            <//>
+          <//>
+
+          <${ChartCard} title="Återbetalning över tid" subtitle="Ackumulerat kassaflöde; korsar noll = återbetald"
+            legend=${html`
+              <span><span className="dot" style=${{ background: "var(--chart-3)" }}></span>Ackumulerat</span>
+              <span><span className="dot" style=${{ background: "var(--bad)" }}></span>Break-even</span>
+            `}>
+            <${ResponsiveContainer} width="100%" height=${240}>
+              <${AreaChart} data=${econ.timeline} margin=${{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <${CartesianGrid} strokeDasharray="3 3" stroke="#f0f0f0" />
+                <${XAxis} dataKey="year" tickLine=${false} axisLine=${false} tickFormatter=${v => "År " + v} />
+                <${YAxis} tickLine=${false} axisLine=${false} tickFormatter=${v => (v / 1000).toFixed(0) + "k"} />
+                <${Tooltip} formatter=${v => fmtSEK(v)} labelFormatter=${l => "År " + l} />
+                <${ReferenceLine} y=${0} stroke="var(--bad)" strokeDasharray="4 4" />
+                <${Area} type="monotone" dataKey="cumulative" stroke="var(--chart-3)" fill="var(--chart-3)" fillOpacity=${0.15} strokeWidth=${2} />
+              <//>
+            <//>
+          <//>
+
+          <${ChartCard} title="Egenanvändning av solel" subtitle="Andel solproduktion som används hemma">
+            <div className="donuts">
+              <div className="donut-wrap">
+                <div className="donut-label">Utan batteri</div>
+                <${ResponsiveContainer} width="100%" height=${140}>
+                  <${PieChart}>
+                    <${Pie} data=${pieNoBat} dataKey="value" innerRadius=${40} outerRadius=${60} startAngle=${90} endAngle=${-270}>
+                      <${Cell} fill="var(--chart-1)" />
+                      <${Cell} fill="var(--border-strong)" />
+                    <//>
+                  <//>
+                <//>
+                <div className="donut-value">${fmtPct(sim.selfConsRateNoBat, 0)}</div>
+              </div>
+              <div className="donut-wrap">
+                <div className="donut-label">Med batteri</div>
+                <${ResponsiveContainer} width="100%" height=${140}>
+                  <${PieChart}>
+                    <${Pie} data=${pieBat} dataKey="value" innerRadius=${40} outerRadius=${60} startAngle=${90} endAngle=${-270}>
+                      <${Cell} fill="var(--chart-2)" />
+                      <${Cell} fill="var(--border-strong)" />
+                    <//>
+                  <//>
+                <//>
+                <div className="donut-value">${fmtPct(sim.selfConsRateBat, 0)}</div>
+              </div>
+            </div>
+          <//>
+
+        </div>
+      </section>
+
+      <section className="section">
+        <h2 className="section-title">Kostnadsfördelning</h2>
+        <table className="breakdown-table">
+          <tbody>
+            <tr><td>Bruttokostnad batteri (${state.batteryCapacity} kWh × ${state.batteryCostPerKWh.toLocaleString("sv-SE")} kr)</td><td className="num">${fmtSEK(econ.gross)}</td></tr>
+            <tr><td>Grönt avdrag (50%, max 50 000 kr)</td><td className="num" style=${{ color: "var(--accent)" }}>−${fmtSEK(econ.subsidy)}</td></tr>
+            <tr className="total"><td>Nettokostnad</td><td className="num">${fmtSEK(econ.netCost)}</td></tr>
+            <tr><td style=${{ paddingTop: "24px" }}>Skattereduktion utan batteri (${state.numAdults} ${state.numAdults > 1 ? "pers" : "pers"} × 60 öre/kWh)</td><td className="num">${fmtSEK(sim.skatteredNoBat)}/år</td></tr>
+            <tr><td>Skattereduktion med batteri</td><td className="num">${fmtSEK(sim.skatteredBat)}/år</td></tr>
+            <tr><td>Förlorad skattereduktion p.g.a. batteri</td><td className="num" style=${{ color: sim.skatteredLoss > 0 ? "var(--bad)" : "inherit" }}>${sim.skatteredLoss > 0 ? "−" : ""}${fmtSEK(sim.skatteredLoss)}/år</td></tr>
+            <tr><td style=${{ paddingTop: "24px" }}>Livstidsbesparing (ej diskonterad)</td><td className="num">${fmtSEK(econ.lifetimeUndiscounted)}</td></tr>
+            <tr><td>Livstidsbesparing (diskonterad till NPV)</td><td className="num">${fmtSEK(econ.npv + econ.netCost)}</td></tr>
+            <tr className="total"><td>Nettovinst över livstid (NPV)</td><td className="num" style=${{ color: econ.npv > 0 ? "var(--accent)" : "var(--bad)" }}>${fmtSEK(econ.npv)}</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section className="section">
+        <h2 className="section-title">Känslighetsanalys</h2>
+        <p className="section-subtitle">Hur robust är kalkylen om priser eller batterikostnad ändras?</p>
+        <div className="sensitivity-grid" style=${{ marginBottom: "24px" }}>
+          <div className="sensitivity-card">
+            <div className="slider-label">Break-even batterikostnad</div>
+            <div className="slider-help">Batteriet behöver kosta mindre än detta för att bli lönsamt på ${state.batteryLifespan} år</div>
+            <div className="headline">${breakEvenCost ? breakEvenCost.cost.toLocaleString("sv-SE", { maximumFractionDigits: 0 }) + " kr/kWh" : "–"}</div>
+            <div className="slider-help">Du betalar nu ${state.batteryCostPerKWh.toLocaleString("sv-SE")} kr/kWh${breakEvenCost && state.batteryCostPerKWh < breakEvenCost.cost ? " · under gränsen ✓" : breakEvenCost ? " · över gränsen" : ""}</div>
+          </div>
+          <div className="sensitivity-card">
+            <div className="slider-label">Break-even prisscenario</div>
+            <div className="slider-help">Vilken elprisnivå krävs för att nå återbetalning inom livslängden</div>
+            <div className="headline">${fmtNum(breakEvenPrice, 2)}×</div>
+            <div className="slider-help">Nu simulerar du med ${fmtNum(state.priceScenario, 1)}× av historiska priser${state.priceScenario > breakEvenPrice ? " · över gränsen ✓" : " · under gränsen"}</div>
+          </div>
+        </div>
+        <div className="chart-card">
+          <div className="chart-title">Återbetalningstid per kombination</div>
+          <div className="chart-subtitle">Rader: batterikostnad (kr/kWh) · kolumner: prisscenario (×)</div>
+          <table className="sensitivity-table">
+            <thead>
+              <tr>
+                <th></th>
+                ${sensitivityTable.prices.map(p => html`<th key=${p}>${fmtNum(p, 1)}×</th>`)}
+              </tr>
+            </thead>
+            <tbody>
+              ${sensitivityTable.rows.map(row => html`
+                <tr key=${row.cost}>
+                  <th>${row.cost.toLocaleString("sv-SE")}</th>
+                  ${row.cells.map(c => {
+                    const bg = !isFinite(c.payback) || c.payback > state.batteryLifespan
+                      ? "var(--bad-soft)"
+                      : c.payback < state.batteryLifespan * 0.6
+                        ? "var(--accent-soft)"
+                        : "var(--warn-soft)";
+                    return html`<td key=${c.price} style=${{ background: bg }}>${fmtYears(c.payback)}</td>`;
+                  })}
+                </tr>
+              `)}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <footer className="footer-note">
+        <h4>Antaganden</h4>
+        <ul>
+          <li>Spotpriser hämtas från elprisetjustnu.se (en öppen proxy för Nordpool). Saknas data används bundlade standardvärden.</li>
+          <li>Köppris per kWh = (spot + nätavgift + energiskatt) × (1 + moms). Säljpris = spot + nätnytta.</li>
+          <li>Skattereduktion modelleras som 60 öre/kWh på exporterad solel, per skattskyldig person i hushållet, max 30 000 kWh/person/år (begränsas även av nätuttag).</li>
+          <li>Solproduktion baseras på ~925 kWh/kWp/år fördelat efter typisk månadsprofil för mellan/södra Sverige.</li>
+          <li>Förbrukningsprofilen använder ett genomsnittligt svenskt hushålls dygnsmönster, skalat efter din angivna årsförbrukning.</li>
+          <li>Simuleringen räknar timme för timme på en representativ dag per månad. Batteriet laddar överskott och urladdas vid underskott. Med prisarbitrage laddar batteriet även från elnätet under dygnets billigaste timmar och urladdar under de dyraste.</li>
+          <li>Grönt avdrag antas vara 50% av batteriets installationskostnad, maximalt 50 000 kr.</li>
+          <li>NPV diskonteras med vald ränta; årliga besparingar växer med elprisutvecklingen och minskar med paneldegradering.</li>
+          <li>Detta är en uppskattning. Faktisk besparing beror på din verkliga förbrukningsprofil, väder, framtida elpriser och installationskvalitet.</li>
+        </ul>
+      </footer>
+    </div>
+  `;
+}
+
+function Verdict({ verdict, econ }) {
+  return html`
+    <div className=${"verdict " + verdict.kind}>
+      <div className="verdict-icon">${verdict.icon}</div>
+      <div className="verdict-text">
+        <h2>${verdict.title}</h2>
+        <p>${verdict.desc}</p>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------------- Mount ---------------- */
+
+const root = createRoot(document.getElementById("root"));
+root.render(html`<${App} />`);
+</script>
+</body>
+</html>
