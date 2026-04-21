@@ -554,12 +554,14 @@ const DEFAULTS = {
   energyTaxOre: 42,
   vat: 0.25,
   nattnytta: 8,
+  skattereduktionOre: 60,
+  elhandlarePaslag: 5,
   numAdults: 1,
   arbitrage: false,
   showAdvanced: false,
 };
 
-const STORAGE_KEY = "se-solar-battery-calc.v2";
+const STORAGE_KEY = "se-solar-battery-calc.v3";
 
 /* ---------------- Helpers ---------------- */
 
@@ -652,11 +654,13 @@ function simulate(inputs, pricesMonthly, hourlyShapes) {
     batteryCapacity, systemSize, priceScenario,
     batteryEff, annualConsumption,
     gridFeeOre, energyTaxOre, vat, nattnytta, numAdults, arbitrage,
+    skattereduktionOre, elhandlarePaslag,
   } = inputs;
   const eff = batteryEff;
   const consScale = annualConsumption / CONSUMPTION_MONTHLY_SUM;
-  const SKATTEREDUKTION_ORE = 60; // öre/kWh tax credit for exported solar
+  const SKATTEREDUKTION_ORE = (skattereduktionOre ?? 60); // öre/kWh tax credit for exported solar
   const SKATTEREDUKTION_CAP = 30000 * (numAdults || 1); // kWh/year cap
+  const paslag = (elhandlarePaslag ?? 0); // öre/kWh retailer markup
 
   let totalAnnualSolar = 0, totalConsumption = 0;
   let annualGridBuyNoBat = 0, annualGridBuyBat = 0;
@@ -681,7 +685,7 @@ function simulate(inputs, pricesMonthly, hourlyShapes) {
       const hPrices = [];
       for (let h = 0; h < 24; h++) {
         const spot = monthAvgPrice * hourlyMult[h];
-        hPrices.push({ h, buy: (spot + gridFeeOre + energyTaxOre) * (1 + vat) });
+        hPrices.push({ h, buy: (spot + paslag + gridFeeOre + energyTaxOre) * (1 + vat) });
       }
       hPrices.sort((a, b) => a.buy - b.buy);
       // Cheapest 8 hours = charge windows (typically nighttime)
@@ -710,7 +714,7 @@ function simulate(inputs, pricesMonthly, hourlyShapes) {
         const solar = solarPerKWpDay * systemSize * SOLAR_HOURLY[h];
         const cons = dailyCons * CONSUMPTION_HOURLY[h];
         const spot = monthAvgPrice * hourlyMult[h];
-        const buyPrice = (spot + gridFeeOre + energyTaxOre) * (1 + vat); // öre/kWh
+        const buyPrice = (spot + paslag + gridFeeOre + energyTaxOre) * (1 + vat); // öre/kWh
         const sellPrice = spot + (nattnytta || 8);                       // öre/kWh (spot + nätnytta only, no skattereduktion)
         daySolar += solar; dayCons += cons;
         buyPriceSum += buyPrice; sellPriceSum += sellPrice;
@@ -1178,8 +1182,13 @@ function App() {
               <${Slider} label="Moms" unit="%"
                 value=${state.vat} min=${0} max=${0.30} step=${0.01} onChange=${set("vat")}
                 format=${v => fmtNum(v * 100, 0)} />
-              <${Slider} label="Nätnytta (sälj, utöver spot)" unit="öre/kWh"
+              <${Slider} label="Elhandlare påslag (köp, utöver spot)" help="Marginal till din elhandlare per kWh (ovanpå spotpris, före moms)" unit="öre/kWh"
+                value=${state.elhandlarePaslag} min=${0} max=${15} step=${0.5} onChange=${set("elhandlarePaslag")}
+                format=${v => fmtNum(v, 1)} />
+              <${Slider} label="Nätnytta (sälj, utöver spot)" help="Ersättning från nätägaren för inmatad el" unit="öre/kWh"
                 value=${state.nattnytta} min=${0} max=${20} step=${1} onChange=${set("nattnytta")} />
+              <${Slider} label="Skattereduktion mikroproduktion" help="Skattekredit per exporterad kWh (60 öre 2024, gäller per person upp till 30 000 kWh/år)" unit="öre/kWh"
+                value=${state.skattereduktionOre} min=${0} max=${80} step=${1} onChange=${set("skattereduktionOre")} />
             </div>
             <div style=${{ marginTop: "24px" }}>
               <button className="advanced-toggle" onClick=${resetDefaults}>Återställ alla värden</button>
@@ -1279,7 +1288,7 @@ function App() {
             <tr><td>Bruttokostnad batteri (${state.batteryCapacity} kWh × ${state.batteryCostPerKWh.toLocaleString("sv-SE")} kr)</td><td className="num">${fmtSEK(econ.gross)}</td></tr>
             <tr><td>Grönt avdrag (50%, max 50 000 kr)</td><td className="num" style=${{ color: "var(--accent)" }}>−${fmtSEK(econ.subsidy)}</td></tr>
             <tr className="total"><td>Nettokostnad</td><td className="num">${fmtSEK(econ.netCost)}</td></tr>
-            <tr><td style=${{ paddingTop: "24px" }}>Skattereduktion utan batteri (${state.numAdults} ${state.numAdults > 1 ? "pers" : "pers"} × 60 öre/kWh)</td><td className="num">${fmtSEK(sim.skatteredNoBat)}/år</td></tr>
+            <tr><td style=${{ paddingTop: "24px" }}>Skattereduktion utan batteri (${state.numAdults} pers × ${state.skattereduktionOre} öre/kWh)</td><td className="num">${fmtSEK(sim.skatteredNoBat)}/år</td></tr>
             <tr><td>Skattereduktion med batteri</td><td className="num">${fmtSEK(sim.skatteredBat)}/år</td></tr>
             <tr><td>Förlorad skattereduktion p.g.a. batteri</td><td className="num" style=${{ color: sim.skatteredLoss > 0 ? "var(--bad)" : "inherit" }}>${sim.skatteredLoss > 0 ? "−" : ""}${fmtSEK(sim.skatteredLoss)}/år</td></tr>
             <tr><td style=${{ paddingTop: "24px" }}>Livstidsbesparing (ej diskonterad)</td><td className="num">${fmtSEK(econ.lifetimeUndiscounted)}</td></tr>
@@ -1339,7 +1348,7 @@ function App() {
         <h4>Antaganden</h4>
         <ul>
           <li>Spotpriser hämtas från elprisetjustnu.se (en öppen proxy för Nordpool). Saknas data används bundlade standardvärden.</li>
-          <li>Köppris per kWh = (spot + nätavgift + energiskatt) × (1 + moms). Säljpris = spot + nätnytta.</li>
+          <li>Köppris per kWh = (spot + elhandlare påslag + nätavgift + energiskatt) × (1 + moms). Säljpris = spot + nätnytta.</li>
           <li>Skattereduktion modelleras som 60 öre/kWh på exporterad solel, per skattskyldig person i hushållet, max 30 000 kWh/person/år (begränsas även av nätuttag).</li>
           <li>Solproduktion baseras på ~925 kWh/kWp/år fördelat efter typisk månadsprofil för mellan/södra Sverige.</li>
           <li>Förbrukningsprofilen använder ett genomsnittligt svenskt hushålls dygnsmönster, skalat efter din angivna årsförbrukning.</li>
